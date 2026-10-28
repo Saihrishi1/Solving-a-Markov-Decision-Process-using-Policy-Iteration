@@ -129,19 +129,66 @@ If the improved policy is the same as the old policy, the policy is considered s
 # -------------------------------------------------
 # Policy Evaluation
 # -------------------------------------------------
+def policy_evaluation(env, policy, gamma, theta):
 
+    V = np.zeros(env.observation_space.n)
+
+    while True:
+        delta = 0
+        for state in range(n_states):
+            v = V[state]
+            new_v = 0
+            for action, action_prob in enumerate(policy[state]):
+                for prob, next_state, reward, done in env.P[state][action]:
+                    new_v += action_prob * prob * (reward + gamma * V[next_state] * (not done))
+            V[state] = new_v
+            delta = max(delta, abs(v - V[state]))
+        if delta < theta:
+            break
+    return V
 
 
 # -------------------------------------------------
 # Policy Improvement
 # -------------------------------------------------
 
-#-------------------------------------------------
+def policy_improvement(env, V, policy, gamma):
+    policy_stable = True
+    for state in range(n_states):
+        old_action = np.argmax(policy[state])
+        action_values = np.zeros(n_actions)
+        for action in range(n_actions):
+            for prob, next_state, reward, done in env.P[state][action]:
+                action_values[action] += prob * (reward + gamma * V[next_state] * (not done))
+        best_action = np.argmax(action_values)
+        policy[state] = np.eye(n_actions)[best_action]
+        if old_action != best_action:
+            policy_stable = False
+    return policy, policy_stable
+
+
+# -------------------------------------------------
 # Policy Iteration
 # -------------------------------------------------
 
+def policy_iteration(env, gamma, theta):
+    
+    iteration = 0
 
+    policy = np.ones((n_states, n_actions)) / n_actions
+    
+    V = np.zeros(n_states)
+    
+    while True:
+        V = policy_evaluation(env, policy, gamma, theta)
+        policy, policy_stable = policy_improvement(env, V, policy, gamma)
 
+        iteration += 1
+
+        if policy_stable:
+            break
+    
+    return policy, V, iteration
 
 ```
 
@@ -149,26 +196,30 @@ If the improved policy is the same as the old policy, the policy is considered s
 
 ```text
 
-Total policy iterations: 
+Total Policy Iteration : 3
 
 Optimal State-Value Function:
-
+[[0.542  0.4988 0.4707 0.4569]
+ [0.5585 0.     0.3583 0.    ]
+ [0.5918 0.6431 0.6152 0.    ]
+ [0.     0.7417 0.8628 0.    ]]
 
 Optimal Policy:
+[['←' '↑' '↑' '↑']
+ ['←' '←' '←' '←']
+ ['↑' '↓' '←' '←']
+ ['←' '→' '↓' '←']]
 
 ```
 
-
+<img width="496" height="361" alt="image" src="https://github.com/user-attachments/assets/99624291-0d46-436f-88ba-95088bd91b07" />
 
 ---
 
 ## Result
 
-```text
+Thus, we have created a program for Policy Iteration and by repeatedly performing policy evaluation and policy improvement, have successfully obtained the optimal value function and optimal policy.
 
-
-
-```
 ---
 
 ## Inference
